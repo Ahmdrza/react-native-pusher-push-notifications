@@ -1,6 +1,7 @@
 package com.b8ne.RNPusherPushNotifications;
 
 import android.app.Activity;
+import android.util.Log;
 
 import android.os.Handler;
 import android.os.Bundle;
@@ -37,6 +38,7 @@ public class NotificationsMessagingService {
                 Object value = extras.get(key);
                 payload.putString(key, value.toString());
             }
+            Log.d("PUSHER_WRAPPER", "payload " + payload);
             map.putMap("data", payload);
 
             if (payload != null) {
@@ -47,9 +49,11 @@ public class NotificationsMessagingService {
                 handler.post(new Runnable() {
                     public void run() {
                         // Construct and load our normal React JS code data
-                        // ReactInstanceManager reactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+                        // ReactInstanceManager reactInstanceManager2 = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+                        // Log.d("PUSHER_WRAPPER", "context test" + reactInstanceManager2.getCurrentReactContext());
                         ReactContext context = reactInstanceManager.getCurrentReactContext();
                         // If it's constructed, send a notification
+                        Log.d("PUSHER_WRAPPER", "context " + context);
                         if (context != null) {
                             context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                                     .emit(notificationEvent, map);
@@ -57,11 +61,21 @@ public class NotificationsMessagingService {
                             // Otherwise wait for construction, then send the notification
                             reactInstanceManager.addReactInstanceEventListener(new ReactInstanceManager.ReactInstanceEventListener() {
                                 public void onReactContextInitialized(ReactContext context) {
-                                    context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                                            .emit(notificationEvent, map);
+                                    Log.d("PUSHER_WRAPPER", "after context event listener " + context);
+                                    final ReactContext reactContext = context;
+                                    new android.os.Handler().postDelayed(
+                                        new Runnable() {
+                                            public void run() {
+                                                Log.i("PUSHER_WRAPPER", "This'll run 2 sec later");
+                                                reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                                        .emit(notificationEvent, map);
+                                            }
+                                        }, 
+                                    2000);
                                 }
                             });
                             if (!reactInstanceManager.hasStartedCreatingInitialContext()) {
+                                Log.d("PUSHER_WRAPPER", "create context in background");
                                 // Construct it in the background
                                 reactInstanceManager.createReactContextInBackground();
                             }
